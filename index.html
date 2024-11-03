@@ -12,9 +12,17 @@
     <div class="score-board"><span id="score"></span></div>
     <!-- <div class="score-board"><span id="score"></span></div> -->
     <button id="restartBtn" onclick="restartGame()">재시작</button>
+    <button id="startBtn" onclick="startGame()" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px 20px; font-size: 18px; cursor: pointer;">게임 시작</button>
+    <img id="explosionGif" src="explosion.gif" style="display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);" />
   </div>
   <div class="instructions">
     <p>조작법: 좌우 방향키 - 이동 | 스페이스바 - 발사</p>
+    <p>아이템 설명</p>
+    <p>빨간색 - 목숨+1 (최대5)</p>
+    <p>파란색 - 3초간 무적</p>
+    <p>초록색 - 공속 증가</p>
+    <p>보라색 - 총알 크기 증가</p>
+    <p>망고 - 화면 내 모든 적/총알 삭제 (보스에게는 큰 데미지를 입힘)</p>
   </div>
   <div class="volume-control">
     <label for="volumeSlider">사운드 볼륨:</label>

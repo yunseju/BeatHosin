@@ -5,9 +5,19 @@ canvas.height = 600;
 
 let player, bullets, enemies, enemyBullets, score, gameOver, lives, isInvincible, stage, maxLife;
 let invincibleTimer, gameLoopInterval, bulletCooldown, curBulletCooldown, bulletWidth;
+let startTime;
+let difficultyLevel; // 초기 난이도 레벨
+let elapsedTime; // 게임 경과 시간 (초 단위로 누적)
+let boss = null; // 보스 몬스터 객체
+let isWarningDisplayed = false; // Warning 문구 표시 여부
+let warningBlinkCount = 0; // Warning 문구 깜빡임 횟수
+let lastWarningBlinkTime
+let isWin;
+// let warningInterval;
+
 let powerUps = [];
 const restartBtn = document.getElementById("restartBtn");
-
+const startBtn = document.getElementById("startBtn"); // 시작 버튼
 // 사운드 설정
 const shootSound = new Audio("shoot.mp3");
 const explosionSound = new Audio("explosion.mp3");
@@ -37,8 +47,13 @@ playerImage.src = "player.png"; // 내 비행기 이미지 경로
 const EnemyImage = new Image();
 EnemyImage.src = "enemy.png"; // 적 비행기 이미지 경로
 const BombImage = new Image();
-BombImage.src = "bomb.png"; // 적 비행기 이미지 경로
 
+BombImage.src = "bomb.png"; // 적 비행기 이미지 경로
+const explosionGif = new Image();
+explosionGif.src = "explosion.gif"; // 폭탄 사용 시 표시할 GIF 이미지 경로
+
+const explosionGifElement = document.getElementById("explosionGif"); // GIF 요소 선택
+let gifDisplayTimeout;
 let bombs = 0; // 폭탄 수
 
 // 게임 초기화 함수 수정
@@ -57,7 +72,14 @@ function initGame() {
   curBulletCooldown = 0;
   bulletWidth = 4;
   maxLife = 5;
+  difficultyLevel = 1;
+  elapsedTime = 0;
+  startTime = Date.now(); 
+  isWarningDisplayed = false;
+  warningBlinkCount = 0;
+  lastWarningBlinkTime = 0;
   powerUps = [];
+  isWin = false;
   document.getElementById("score").innerText = score;
   restartBtn.style.display = "none";
 }
@@ -169,13 +191,15 @@ function useBomb() {
     enemies = enemies.filter(enemy => enemy.type === "boss"); // 보스 제외
     enemyBullets = []; // 모든 적 총알 삭제
 
-    // 보스 몬스터에 큰 데미지 주기
-    enemies.forEach(enemy => {
-      if (enemy.type === "boss") {
-        enemy.health -= 50; // 보스에 50 데미지
-      }
-      
-    });
+    if(boss){
+      boss.health -= 100;
+    }
+    // 폭탄 사용 시 GIF 표시
+    explosionGifElement.style.display = "block"; // GIF 요소 표시
+    clearTimeout(gifDisplayTimeout); // 기존 타이머 초기화 (중복 방지)
+    gifDisplayTimeout = setTimeout(() => {
+      explosionGifElement.style.display = "none"; // 1초 후 GIF 숨기기
+    }, 1000);
   }
 }
 // 발사 속도 증가 함수
@@ -234,18 +258,41 @@ function checkStage() {
   ctx.font = "18px Arial";
   ctx.fillText("Stage: " + stage, 180, 30);
 }
-
+function updateBoss() {
+  if (boss) {
+    // 목표 위치까지 천천히 내려오기
+    if (boss.y < boss.targetY) {
+      boss.y += boss.speed; // 보스가 목표 위치까지 내려옴
+    } else {
+      boss.y = boss.targetY; // 목표 위치에 도달하면 고정
+    }
+  }
+}
 // 게임 업데이트
 function updateGame() {
   updatePlayer();
   bullets.forEach((bullet, index) => {
     bullet.y -= bullet.speed;
     if (bullet.y < 0) bullets.splice(index, 1);
+
+    // 보스와 충돌 시 보스에게 데미지 주기
+    if (boss && bullet.x < boss.x + boss.width &&
+      bullet.x + bullet.width > boss.x &&
+      bullet.y < boss.y + boss.height &&
+      bullet.y + bullet.height > boss.y) {
+      boss.health -= 5; // 총알 한 발당 5의 데미지
+      bullets.splice(index, 1); // 총알 삭제
+      if (boss.health <= 0) {
+        // handleBossDefeat(); // 보스가 죽으면 게임 종료
+        isWin = true;
+        handleBossDefeat(); // 보스가 죽으면 게임 종료
+      }
+    }
   });
 
   enemies.forEach((enemy, index) => {
     enemy.y += enemy.speed;
-    if (Math.random() < 0.01) enemyShoot(enemy);
+    if (Math.random() < 0.013 * difficultyLevel) enemyShoot(enemy);
     if (enemy.y > canvas.height) enemies.splice(index, 1);
 
     bullets.forEach((bullet, bulletIndex) => {
@@ -300,9 +347,18 @@ function updateGame() {
 
   checkPowerUpCollision();
   checkStage();
-
-  if (Math.random() < 0.01) createEnemy();
   if (Math.random() < 0.01) createPowerUp();
+  if(!boss){
+    if (Math.random() < 0.01 * difficultyLevel) createEnemy();
+  }
+  
+}
+
+function handleBossDefeat() {
+  boss = null; // 보스를 제거
+   // Mission Clear 메시지 표시
+  restartBtn.style.display = "block";
+  clearInterval(gameLoopInterval); // 게임 루프 종료
 }
 
 // 목숨 감소 처리
@@ -362,6 +418,25 @@ function drawGame() {
     ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
   });
 
+  // Warning 문구 깜빡임 처리
+  if (isWarningDisplayed) {
+    const currentTime = Date.now();
+    if (currentTime - lastWarningBlinkTime >= 500) { // 0.5초 간격
+      lastWarningBlinkTime = currentTime;
+      warningBlinkCount++;
+
+      if (warningBlinkCount <= 6) {
+        drawWarning(warningBlinkCount % 2 === 0); // 깜빡임 효과
+      } else {
+        isWarningDisplayed = false; // Warning 문구 표시 종료
+        spawnBoss(); // 보스 몬스터 등장
+      }
+    }
+  }
+
+  if (boss) {
+    drawBoss();
+  }
   enemies.forEach(enemy => {
     // ctx.fillStyle = "red";
     // ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
@@ -416,6 +491,11 @@ function drawGame() {
     ctx.font = "30px Arial";
     ctx.fillText("Game Over", canvas.width / 2 - 70, canvas.height / 2);
   }
+  if (isWin){
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText("Mission Clear", canvas.width / 2 - 100, canvas.height / 2);
+  }
 }
 
 
@@ -425,26 +505,78 @@ function endGame() {
   restartBtn.style.display = "block";
   clearInterval(gameLoopInterval);
 }
+// 보스 몬스터 생성 함수
+function spawnBoss() {
+  boss = { x: canvas.width / 2 - 100, // 화면 중앙
+    y: -100, // 화면 위에서 등장
+    width: 200,
+    height: 200,
+    health: 1000,
+    targetY: 90, // 고정할 목표 위치
+    speed: 2 // 내려오는 속도
+    }; // 보스 속성 설정
+  enemies = [];
+  enemyBullets = [];
+}
+function drawBoss() {
+  if (boss) {
+    // ctx.fillStyle = "darkred";
+    ctx.drawImage(EnemyImage, boss.x, boss.y, boss.width, boss.height);
+    // ctx.drawImage(BombImage, powerUp.x, powerUp.y, powerUp.width, powerUp.height);
+    
 
+    // 보스 체력 표시
+    ctx.fillStyle = "white";
+    ctx.font = "18px Arial";
+    ctx.fillText("Boss HP: " + boss.health, 10, 50);
+  }
+}
+// Warning 문구 그리기
+function drawWarning(isVisible) {
+  if (isVisible) {
+    ctx.fillStyle = "red";
+    ctx.font = "30px Arial";
+    ctx.fillText("WARNING", canvas.width / 2 - 70, canvas.height / 2);
+  }
+}
+
+function showWarning() {
+  lastWarningBlinkTime = Date.now();
+  warningBlinkCount = 0; // 깜빡임 횟수 초기화
+  isWarningDisplayed = true;
+}
 // 게임 루프
 function gameLoop() {
   if (!gameOver) {
     updateGame();
+    updateBoss();
     drawGame();
+    const elapsedTime = (Date.now() - startTime) / 1000; // 초 단위로 변환
+    // 2분 후 Warning 문구 표시 및 보스 등장 준비
+    if (elapsedTime >= 120 && !isWarningDisplayed && !boss) { // 약 2분 경과 시 (60fps 기준)
+      isWarningDisplayed = true;
+      // showWarning();
+    }
+    if (elapsedTime >= difficultyLevel * 10) { // 약 10초마다 난이도 증가
+      difficultyLevel += 0.1; // 난이도 레벨을 점진적으로 증가
+    }
   }
 }
 
 // 게임 시작
 function startGame() {
+  startBtn.style.display = "none"; // 시작 버튼 숨기기
+  restartBtn.style.display = "none"; // 게임 시작 시 재시작 버튼도 숨기기
+  initGame(); // 게임 초기화
   gameLoopInterval = setInterval(gameLoop, 1000 / 60);
 }
 
 // 재시작
 function restartGame() {
-  initGame();
+  // initGame();
   startGame();
 }
 
-// 초기화 및 게임 시작
-initGame();
-startGame();
+// // 초기화 및 게임 시작
+// initGame();
+// startGame();
