@@ -449,7 +449,7 @@ function drawGame() {
       ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
     } else if (powerUp.type === "bomb") {
       // ctx.fillStyle = "yellow "; // 폭탄 아이템은 빨간색
-      ctx.drawImage(BombImage, powerUp.x, powerUp.y, powerUp.width, powerUp.height);
+      ctx.drawImage(BombImage, powerUp.x, powerUp.y, 40, 40);
     }else if (powerUp.type === "speed") {
       ctx.fillStyle = "green"; // 발사 속도 증가 파워업
       ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
