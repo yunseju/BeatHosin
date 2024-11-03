@@ -1,0 +1,72 @@
+/* 페이지 기본 스타일 */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  background-color: #000;
+  color: #fff;
+  text-align: center;
+}
+
+/* 게임 컨테이너 */
+.game-container {
+  position: relative;
+  width: 400px;
+  height: 600px;
+  border: 2px solid white;
+}
+
+/* 캔버스 설정 */
+#gameCanvas {
+  background-color: #111;
+  display: block;
+  margin: auto;
+}
+
+/* 점수 표시 스타일 */
+.score-board {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 18px;
+  color: #fff;
+}
+
+/* 목숨 표시 스타일 */
+.lives-board {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 18px;
+  color: #fff;
+}
+
+/* 재시작 버튼 스타일 */
+#restartBtn {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  font-size: 16px;
+  color: #fff;
+  background-color: #333;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: none;  /* 기본적으로 숨김 처리 */
+}
+
+#restartBtn:hover {
+  background-color: #555;
+}
+
+/* 조작 설명 */
+.instructions {
+  font-size: 18px;
+  margin-top: 10px;
+}

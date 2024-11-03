@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1942 스타일 비행기 슈팅 게임</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div class="score-board"><span id="score"></span></div>
+    <!-- <div class="score-board"><span id="score"></span></div> -->
+    <button id="restartBtn" onclick="restartGame()">재시작</button>
+  </div>
+  <div class="instructions">
+    <p>조작법: 좌우 방향키 - 이동 | 스페이스바 - 발사</p>
+  </div>
+  <div class="volume-control">
+    <label for="volumeSlider">사운드 볼륨:</label>
+    <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5">
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
